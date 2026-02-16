@@ -1,6 +1,6 @@
 # Sparky
 
-[![Intro video](https://img.youtube.com/vi/DQi3WcYyCK8/maxresdefault.jpg)](https://www.youtube.com/playlist?list=PLFjX03FeSTlT2hIZYbJznCpo0xu-FiDF5)
+[![Intro video](https://img.youtube.com/vi/DQi3WcYyCK8/maxresdefault.jpg)](https://youtu.be/DQi3WcYyCK8?si=GeK_WCQvkyvC_PSP)
 
 Sparky is a living and useful agent, inhabiting a Reachy Mini Lite body,
 orchestrated by OpenClaw for personality, skills, and multi-host span.
