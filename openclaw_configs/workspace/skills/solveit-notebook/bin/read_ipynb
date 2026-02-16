@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Read an .ipynb and emit a compact JSON summary."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Summarize a notebook JSON file")
+    p.add_argument("path", help="Path to .ipynb")
+    p.add_argument("--max-cells", type=int, default=20, help="Maximum cells to include")
+    p.add_argument("--max-chars", type=int, default=300, help="Maximum preview chars per cell")
+    return p.parse_args()
+
+
+def _cell_preview(cell: dict, max_chars: int) -> str:
+    src = cell.get("source", "")
+    if isinstance(src, list):
+        src = "".join(src)
+    src = str(src)
+    if len(src) <= max_chars:
+        return src
+    return src[: max_chars - 3] + "..."
+
+
+def main() -> int:
+    args = _parse_args()
+    path = Path(args.path).expanduser().resolve()
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(json.dumps({"ok": False, "error": f"failed to read notebook: {e}", "path": str(path)}), file=sys.stderr)
+        return 1
+
+    cells = data.get("cells")
+    if not isinstance(cells, list):
+        print(json.dumps({"ok": False, "error": "invalid notebook: missing cells[]", "path": str(path)}), file=sys.stderr)
+        return 1
+
+    out_cells = []
+    for i, cell in enumerate(cells[: max(0, args.max_cells)]):
+        src = cell.get("source", "")
+        if isinstance(src, list):
+            src_text = "".join(src)
+        else:
+            src_text = str(src)
+
+        out_cells.append(
+            {
+                "index": i,
+                "type": cell.get("cell_type", "unknown"),
+                "chars": len(src_text),
+                "preview": _cell_preview(cell, args.max_chars),
+            }
+        )
+
+    payload = {
+        "ok": True,
+        "path": str(path),
+        "nbformat": data.get("nbformat"),
+        "nbformat_minor": data.get("nbformat_minor"),
+        "cell_count": len(cells),
+        "truncated": len(cells) > len(out_cells),
+        "metadata": data.get("metadata", {}),
+        "cells": out_cells,
+    }
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

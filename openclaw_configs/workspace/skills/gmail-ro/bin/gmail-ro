@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Read-only wrapper around gogcli Gmail search.
+# Requires either:
+#   - env GOG_ACCOUNT set, or
+#   - a single stored token in gog (so gog can pick a default)
+
+cmd="${1:-}"
+shift || true
+
+account_args=()
+if [[ -n "${GOG_ACCOUNT:-}" ]]; then
+  account_args=(--account "$GOG_ACCOUNT")
+fi
+
+case "$cmd" in
+  unread)
+    # Show latest unread threads (read-only)
+    # Usage: gmail-ro unread [max]
+    max="${1:-10}"
+    exec gog "${account_args[@]}" gmail search "is:unread newer_than:14d" --max "$max" --json
+    ;;
+
+  search)
+    # Read-only search (Gmail query syntax)
+    # Usage: gmail-ro search "<query>" [max]
+    query="${1:-}"
+    max="${2:-10}"
+    if [[ -z "$query" ]]; then
+      echo "usage: gmail-ro search \"<query>\" [max]" >&2
+      exit 2
+    fi
+    exec gog "${account_args[@]}" gmail search "$query" --max "$max" --json
+    ;;
+
+  *)
+    cat >&2 <<'EOF'
+usage:
+  gmail-ro unread [max]
+  gmail-ro search "<query>" [max]
+
+notes:
+  - set GOG_ACCOUNT=you@gmail.com for non-interactive runs
+EOF
+    exit 2
+    ;;
+esac

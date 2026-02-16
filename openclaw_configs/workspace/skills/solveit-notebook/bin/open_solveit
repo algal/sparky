@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Open a notebook/path in SolveIt via opensolveit and return structured output."""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+OSC_1337_RE = re.compile(r"\x1b\]1337;OpenURL=:(?P<b64>[A-Za-z0-9+/=_-]+)\x07")
+URL_RE = re.compile(r"https?://[^\s\]\)>'\"]+")
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Open a path in SolveIt")
+    p.add_argument("path", help="Path to notebook/file/directory")
+    p.add_argument("--url-only", action="store_true", help="Print only resolved URL when available")
+    return p.parse_args()
+
+
+def _decode_osc_url(text: str) -> str:
+    m = OSC_1337_RE.search(text)
+    if not m:
+        return ""
+
+    b64 = m.group("b64")
+    if len(b64) % 4:
+        b64 += "=" * (4 - len(b64) % 4)
+
+    try:
+        return base64.b64decode(b64).decode("utf-8", errors="replace")
+    except Exception:
+        return ""
+
+
+def _extract_url(stdout: str, stderr: str) -> str:
+    combined = stdout + "\n" + stderr
+    osc_url = _decode_osc_url(combined)
+    if osc_url:
+        return osc_url
+
+    m = URL_RE.search(combined)
+    if m:
+        return m.group(0)
+
+    return ""
+
+
+def main() -> int:
+    args = _parse_args()
+    target = Path(args.path).expanduser().resolve()
+
+    if not target.exists():
+        print(json.dumps({"ok": False, "error": f"path does not exist: {target}", "path": str(target)}), file=sys.stderr)
+        return 1
+
+    opensolveit_bin = shutil.which("opensolveit")
+    if not opensolveit_bin:
+        print(json.dumps({"ok": False, "error": "opensolveit not found in PATH", "path": str(target)}), file=sys.stderr)
+        return 1
+
+    proc = subprocess.run(
+        [opensolveit_bin, str(target)],
+        capture_output=True,
+        text=True,
+    )
+
+    url = _extract_url(proc.stdout, proc.stderr)
+    ok = proc.returncode == 0 or bool(url)
+
+    if args.url_only and url:
+        print(url)
+    else:
+        payload = {
+            "ok": ok,
+            "path": str(target),
+            "url": url,
+            "returncode": proc.returncode,
+            "stdout": proc.stdout,
+            "stderr": proc.stderr,
+        }
+        print(json.dumps(payload, indent=2))
+
+    return 0 if ok else (proc.returncode or 1)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

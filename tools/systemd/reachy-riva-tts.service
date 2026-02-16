@@ -1,0 +1,40 @@
+[Unit]
+Description=Reachy Riva Magpie TTS (Docker, local-only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/reachy/riva-tts.env
+
+# Fail fast if Docker daemon is unavailable.
+ExecStartPre=/usr/bin/docker info
+
+# Ensure stale container from previous run does not block startup.
+ExecStartPre=-/usr/bin/docker rm -f ${CONTAINER_NAME}
+
+# Run Riva TTS locally via Docker.
+ExecStart=/usr/bin/docker run --rm \
+  --name ${CONTAINER_NAME} \
+  --runtime=nvidia \
+  --gpus ${DOCKER_GPUS} \
+  --shm-size=${SHM_SIZE} \
+  -e NGC_API_KEY \
+  -e NIM_HTTP_API_PORT=${NIM_HTTP_API_PORT} \
+  -e NIM_GRPC_API_PORT=${NIM_GRPC_API_PORT} \
+  -e NIM_TAGS_SELECTOR=${NIM_TAGS_SELECTOR} \
+  -p ${HOST_HTTP_PORT}:${NIM_HTTP_API_PORT} \
+  -p ${HOST_GRPC_PORT}:${NIM_GRPC_API_PORT} \
+  ${IMAGE}
+
+# Stop and remove container when service is stopped/disabled.
+ExecStop=-/usr/bin/docker stop -t 20 ${CONTAINER_NAME}
+ExecStopPost=-/usr/bin/docker rm -f ${CONTAINER_NAME}
+
+Restart=no
+TimeoutStartSec=0
+TimeoutStopSec=30
+KillMode=process
+
+[Install]
+WantedBy=default.target

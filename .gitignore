@@ -35,8 +35,13 @@ env/
 # Environment variables
 .env
 
-# Model files (downloaded separately)
+# Model policy
+# Keep only small runtime models in git. Keep large/sensitive artifacts local.
 models/*.onnx
+!models/silero_vad_v5.onnx
+!models/wake_up_sparky.onnx
+models/parakeet-tdt-0.6b-v2/
+models/speaker_enrollments.json
 
 # OS
 .DS_Store
@@ -49,4 +54,3 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
-models/parakeet-tdt-0.6b-v2/

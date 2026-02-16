@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Read-only wrapper around gogcli Calendar commands.
+# Non-interactive runs should set:
+#   GOG_ACCOUNT, GOG_KEYRING_BACKEND, GOG_KEYRING_PASSWORD
+
+cmd="${1:-}"
+shift || true
+
+account_args=()
+if [[ -n "${GOG_ACCOUNT:-}" ]]; then
+  account_args=(--account "$GOG_ACCOUNT")
+fi
+
+calendar_id="${GCAL_ID:-primary}"
+
+case "$cmd" in
+  today)
+    max="${1:-15}"
+    exec gog "${account_args[@]}" calendar events "$calendar_id" --today --max "$max" --json
+    ;;
+
+  tomorrow)
+    max="${1:-15}"
+    exec gog "${account_args[@]}" calendar events "$calendar_id" --tomorrow --max "$max" --json
+    ;;
+
+  days)
+    # Next N days (including today)
+    days="${1:-7}"
+    max="${2:-30}"
+    exec gog "${account_args[@]}" calendar events "$calendar_id" --days "$days" --max "$max" --json
+    ;;
+
+  search)
+    # Free-text search across events within an optional window.
+    # Usage: gcal-ro search "<query>" [days] [max]
+    query="${1:-}"
+    days="${2:-30}"
+    max="${3:-20}"
+    if [[ -z "$query" ]]; then
+      echo "usage: gcal-ro search \"<query>\" [days] [max]" >&2
+      exit 2
+    fi
+    exec gog "${account_args[@]}" calendar events "$calendar_id" --days "$days" --query "$query" --max "$max" --json
+    ;;
+
+  *)
+    cat >&2 <<'EOF'
+usage:
+  gcal-ro today [max]
+  gcal-ro tomorrow [max]
+  gcal-ro days [nDays] [max]
+  gcal-ro search "<query>" [days] [max]
+
+env:
+  GOG_ACCOUNT=you@gmail.com      (recommended)
+  GCAL_ID=primary                (optional; defaults to primary)
+EOF
+    exit 2
+    ;;
+esac

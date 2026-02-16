@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""Create a valid .ipynb file, optionally via jupytext conversion."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Create a SolveIt/Jupyter notebook")
+    p.add_argument("output", help="Path to output .ipynb")
+    p.add_argument("--title", default="Notebook", help="Notebook title for markdown intro cell")
+    p.add_argument("--summary", default="", help="Optional summary text in intro cell")
+    p.add_argument("--code", default="", help="Optional initial code cell contents")
+    p.add_argument("--from", dest="source", default="", help="Convert source (.md/.py/.ipy) to ipynb via jupytext")
+    p.add_argument("--overwrite", action="store_true", help="Overwrite output if it exists")
+    p.add_argument("--kernel-name", default="python3", help="kernelspec.name metadata")
+    p.add_argument("--display-name", default="Python 3", help="kernelspec.display_name metadata")
+    p.add_argument("--language", default="python", help="language_info.name metadata")
+    return p.parse_args()
+
+
+def _ensure_output_path(output: Path, overwrite: bool) -> None:
+    if output.exists() and not overwrite:
+        raise FileExistsError(f"output already exists: {output} (pass --overwrite to replace)")
+    output.parent.mkdir(parents=True, exist_ok=True)
+
+
+def _convert_with_jupytext(source: Path, output: Path, overwrite: bool) -> dict:
+    if not source.exists():
+        raise FileNotFoundError(f"source does not exist: {source}")
+    if shutil.which("jupytext") is None:
+        raise RuntimeError("jupytext is not available in PATH")
+
+    _ensure_output_path(output, overwrite)
+
+    cmd = ["jupytext", "--to", "notebook", str(source), "--output", str(output)]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            "jupytext conversion failed"
+            + (f"\nstdout:\n{proc.stdout}" if proc.stdout else "")
+            + (f"\nstderr:\n{proc.stderr}" if proc.stderr else "")
+        )
+
+    return {
+        "ok": True,
+        "mode": "jupytext",
+        "source": str(source),
+        "output": str(output),
+        "returncode": proc.returncode,
+    }
+
+
+def _create_notebook_json(args: argparse.Namespace, output: Path) -> dict:
+    _ensure_output_path(output, args.overwrite)
+
+    intro_lines = [f"# {args.title.strip() or 'Notebook'}"]
+    if args.summary.strip():
+        intro_lines.append("")
+        intro_lines.append(args.summary.strip())
+
+    cells = [
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": "\n".join(intro_lines) + "\n",
+        }
+    ]
+
+    if args.code.strip():
+        cells.append(
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": args.code,
+            }
+        )
+
+    notebook = {
+        "cells": cells,
+        "metadata": {
+            "kernelspec": {
+                "display_name": args.display_name,
+                "language": args.language,
+                "name": args.kernel_name,
+            },
+            "language_info": {
+                "name": args.language,
+            },
+        },
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
+
+    output.write_text(json.dumps(notebook, indent=2) + "\n", encoding="utf-8")
+
+    return {
+        "ok": True,
+        "mode": "json",
+        "output": str(output),
+        "cells": len(cells),
+        "has_code_cell": bool(args.code.strip()),
+    }
+
+
+def main() -> int:
+    args = _parse_args()
+    output = Path(args.output).expanduser().resolve()
+
+    try:
+        if args.source:
+            source = Path(args.source).expanduser().resolve()
+            result = _convert_with_jupytext(source, output, args.overwrite)
+        else:
+            result = _create_notebook_json(args, output)
+
+        print(json.dumps(result, indent=2))
+        return 0
+    except Exception as e:
+        print(json.dumps({"ok": False, "error": str(e), "output": str(output)}), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

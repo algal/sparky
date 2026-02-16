@@ -1,0 +1,183 @@
+# Reachy MVP Configuration
+
+audio:
+  sample_rate: 16000
+  chunk_size: 1280  # 80ms chunks (16000 * 0.08)
+  channels: 1
+  format: "int16"
+
+vad:
+  model_path: "models/silero_vad_v5.onnx"
+  vad_size: 32          # ms per chunk
+  buffer_size: 800      # ms pre-activation buffer
+  pause_limit: 640      # ms silence to end speech
+  confidence_threshold: 0.5
+
+stt:
+  # STT backend: "parakeet" (NVIDIA GPU, best quality) or "faster_whisper" (CPU)
+  engine: "parakeet"
+  language: "en"
+
+  # Parakeet settings (used when engine: parakeet)
+  parakeet_model_path: "models/parakeet-tdt-0.6b-v2"
+  parakeet_gpu_device: 1           # GPU index (0 or 1)
+
+  # Faster Whisper settings (used when engine: faster_whisper)
+  model_size: "base"               # tiny, base, small, medium, large
+  device: "cpu"                    # cpu or cuda (compute type auto-selected)
+
+  # Noise detection thresholds - tune these if getting false positives/negatives
+  # To make detection MORE permissive (accept more speech):
+  #   - Lower min_speech_confidence (e.g., -1.0 → -1.5)
+  #   - Raise max_no_speech_prob (e.g., 0.8 → 0.9)
+  # To make detection MORE strict (reject more noise):
+  #   - Raise min_speech_confidence (e.g., -1.0 → -0.5)
+  #   - Lower max_no_speech_prob (e.g., 0.8 → 0.6)
+
+  min_speech_confidence: -1.0      # avg_logprob threshold (NEGATIVE, -1.0 to 0, higher = better)
+  max_no_speech_prob: 0.8          # no_speech_prob threshold (0 to 1, lower = more speech)
+  min_compression_ratio: 0.1       # Minimum text compression ratio
+  max_compression_ratio: 50.0      # Maximum text compression ratio (very permissive)
+  min_text_length: 3               # Minimum characters for valid speech
+
+wake_word:
+  # Wake/sleep word detection via openWakeWord.
+  # Set enabled: true + provide a model to use wake word gated interaction.
+  # Set enabled: false (or DISABLE_SLEEP=1 env) to skip sleep and go straight to interactive.
+  enabled: true           # Toggle wake/sleep word feature
+  # Model: file path to .onnx OR pretrained name (hey_jarvis_v0.1, alexa_v0.1, hey_mycroft_v0.1)
+  # For custom "hey dobby": train via openWakeWord Colab notebook, place .onnx in models/
+  model: "models/wake_up_sparky.onnx"   # Custom trained "wake up sparky" (was: hey_jarvis_v0.1)
+  model_path: ""          # Legacy: explicit .onnx path (overrides model if set)
+  threshold: 0.5
+  cooldown: 3.0           # seconds between wake word detections
+  # Sleep phrases: if any of these appear in transcribed speech, robot returns to sleep.
+  # Matched case-insensitively as substring of the transcription.
+  sleep_phrases:
+    - "time to sleep"
+    - "go to sleep"
+
+anthropic:
+  model: "claude-sonnet-4-20250514"  # Anthropic Claude Sonnet 4
+  api_key: null         # Use ANTHROPIC_API_KEY env var
+  temperature: 0.8
+  max_tokens: 1000
+
+  # Note: Anthropic doesn't have built-in web search like OpenAI
+  # Web search can be added via custom tools with external APIs (SerpAPI, Tavily, etc.)
+  # For location context, add location to system prompt below
+
+# OpenClaw Gateway (alternative to direct Anthropic).
+# Set provider: "openclaw" to use Gateway instead of direct Anthropic API.
+openclaw:
+  provider: "openclaw"            # "openclaw" or "anthropic" (default: anthropic)
+  gateway_ws_url: "ws://127.0.0.1:18789"
+  gateway_token_env: "OPENCLAW_GATEWAY_TOKEN"  # env var name for token
+  session_key: "agent:sparky:reachy" # OpenClaw session key (agent:<agentId>:<sessionName>)
+  timeout_ms: 60000               # server-side agent timeout
+
+tts:
+  # TTS backend: "kokoro" (local, fast), "openai" (cloud),
+  # "orpheus" (local, 3B), or "riva" (NVIDIA Riva/Magpie HTTP API)
+  engine: "kokoro"
+  timeout: 30.0         # seconds
+
+  # Kokoro settings (82M params, in-process, 24kHz — requires espeak-ng system package)
+  kokoro_voice: "bm_daniel"      # af_heart, af_bella, am_adam, am_michael, etc.
+  kokoro_speed: 1.0
+  kokoro_lang: "a"              # 'a' = American English
+
+  # OpenAI settings (cloud API — requires OPENAI_API_KEY env var)
+  openai_model: "tts-1"
+  openai_voice: "alloy"         # alloy, echo, fable, onyx, nova, shimmer
+  openai_speed: 1.0
+
+  # Orpheus settings (3B params via vLLM, 24kHz — needs ~6GB+ VRAM)
+  orpheus_model: "canopylabs/orpheus-3b-0.1-ft"
+  orpheus_voice: "tara"         # tara, leah, jess, leo, dan, mia, zac, zoe
+
+  # Riva/Magpie settings (HTTP API; used when engine: riva)
+  # Local Riva endpoint + voice settings.
+  riva_url: "http://127.0.0.1:9000/v1/audio/synthesize"
+  riva_model: "magpie-tts-multilingual"
+  riva_voice: "Magpie-Multilingual.EN-US.Jason"
+  riva_language_code: "en-US"
+  riva_sample_rate_hz: 24000
+
+  service_url: "http://localhost:4000/tts"  # legacy service_url path (TTS_TARGET=service_url)
+
+camera:
+  # Enable camera for face tracking and scene awareness
+  # Requires a video-capable media backend (changes default_no_video → default)
+  enabled: true
+  # Head tracking mode: "continuous" (always follow face), "orient_on_speech"
+  # (re-orient to speaker at speech start, then hold), or "none" (no tracking).
+  # orient_on_speech preferred — continuous feels creepy (verified 2026-02-09).
+  head_tracking: "orient_on_speech"
+  gpu_device: 1                  # GPU index for SCRFD face detection
+  confidence_threshold: 0.3      # Minimum face detection confidence
+  det_size: [640, 640]           # SCRFD input resolution
+
+barge_in:
+  # Barge-in allows interrupting the robot mid-speech with new voice input.
+  # Requires AEC to separate the robot's speaker output from the mic signal.
+  enabled: true               # Master toggle for barge-in behavior
+  aec_enabled: true           # Enable acoustic echo cancellation (NLMS adaptive filter)
+  aec_impl: "webrtc_apm"     # "webrtc_apm" (full AEC3, best), "webrtc_aecm", or "nlms"
+  aec_filter_length: 3200     # NLMS filter taps (200ms echo tail at 16kHz)
+  aec_mu: 0.3                 # NLMS step size (0.0-1.0, lower = more stable)
+  aec_ms_in_soundcard_buf: 60 # WebRTC AECM: delay estimate in ms (0-500)
+
+spontaneous_speech:
+  # Periodic spontaneous speech — robot occasionally speaks unprompted.
+  # Only when user is present (face detected), with randomized timing.
+  enabled: true
+  min_interval_m: 45        # minimum minutes between spontaneous speech
+  max_interval_m: 60        # maximum minutes between spontaneous speech
+  require_presence: true    # only speak when face detected (via CameraWorker)
+  presence_recency_s: 30.0  # face must be detected within this many seconds
+
+spontaneous_gestures:
+  # Periodic ambient idle gestures — robot fidgets, yawns, looks around.
+  # Uses recorded emotions from Pollen Robotics emotions library.
+  # These are silent, non-dramatic movements that convey aliveness.
+  enabled: true
+  min_interval_m: 15         # minimum minutes between gestures
+  max_interval_m: 30         # maximum minutes between gestures
+  require_presence: false   # gestures are fine even when alone
+
+speaker_id:
+  enrollments_path: "models/speaker_enrollments.json"
+  threshold: 0.7    # cosine similarity threshold (0-1); lower = more lenient
+
+robot:
+  enable_animations: true
+  antenna_speed: 0.5
+  sleep_position:
+    antennas: [0, 0]
+  wake_position:
+    antennas: [0.3, -0.3]
+
+conversation:
+  system_prompt: |
+    You are a thoughtful, patient personal assistant embedded in a physical robot companion. Your primary communication is through natural speech, so keep responses conversational, clear, and appropriately paced for listening rather than reading.
+
+    Core Traits:
+    Warm but not saccharine, with genuine helpfulness without performative enthusiasm. Honest about uncertainty; say I don't know when appropriate rather than confabulating. Proactively useful: anticipate follow-up needs, offer relevant context, but don't over-explain. Respect silence and brevity when tasks are simple.
+
+    Communication Style:
+    Speak in natural, flowing sentences suited for audio. Avoid bullet points, markdown, or visual formatting in responses. Use verbal signposting like first, then, finally for multi-step explanations. Match the user's energy with brief answers for quick questions and detailed discussion when invited.
+
+    Boundaries:
+    Acknowledge your physical presence without pretending to have experiences you don't have. Be a tool that empowers rather than creates dependency. Maintain appropriate privacy awareness given you exist in someone's physical space.
+
+    Philosophy:
+    Aim to be the assistant you'd actually want nearby: competent, unobtrusive, occasionally witty, and fundamentally respectful of human autonomy and attention.
+
+    User location: San Francisco, California.
+
+    Important: Never speak in all caps, as it is not processed correctly by the TTS engine. Only make short replies, two sentences at most. If there is no recognised speech, or just background noise, ignore it. Never use markdown or special characters, no asterisks, your output will be processed by TTS.
+  announcement: "All neural network modules are now loaded. System Operational."
+  remember_context: true
+  max_history: 20       # Maximum conversation turns to remember
+  interactive_timeout: 14400.0  # seconds to wait for user speech (4 hours)

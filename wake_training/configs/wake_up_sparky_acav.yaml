@@ -1,0 +1,29 @@
+model_name: wake_up_sparky_acav
+target_phrase:
+- wake up sparky
+custom_negative_phrases: []
+n_samples: 40000
+n_samples_val: 8000
+tts_batch_size: 50
+augmentation_batch_size: 16
+piper_sample_generator_path: ./piper-sample-generator-oww
+output_dir: sparky_acav_artifacts
+rir_paths:
+- ./mit_rirs
+background_paths:
+- ./background_clips
+background_paths_duplication_rate:
+- 1
+false_positive_validation_data_path: data/validation_set_features.npy
+augmentation_rounds: 1
+feature_data_files:
+  ACAV100M_2000_hrs: data/openwakeword_features_ACAV100M_2000_hrs_16bit.npy
+batch_n_per_class:
+  ACAV100M_2000_hrs: 1024
+  adversarial_negative: 64
+  positive: 64
+model_type: dnn
+layer_size: 32
+steps: 80000
+max_negative_weight: 1500
+target_false_positives_per_hour: 0.02
