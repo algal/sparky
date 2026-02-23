@@ -5,6 +5,8 @@
 Sparky is a living and useful agent, inhabiting a Reachy Mini Lite body,
 orchestrated by OpenClaw for personality, skills, and multi-host span.
 
+To see Sparky in action, check out his [Hello Sparky video](https://youtu.be/DQi3WcYyCK8?si=wHfwFMxoM4w6kW9q), or read [my blog articles](https://alexisgallagher.com).
+
 Sparky is powered by NVIDIA hardware and AI models. Through an API
 endpoint, Sparky can use Nemotron-Super-49B-v1.5 LLM for reasoning,
 language and tool-calling. Locally, Sparky uses an NVIDIA RTX 3090 to
