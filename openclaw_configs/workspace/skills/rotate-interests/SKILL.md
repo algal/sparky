@@ -1,6 +1,6 @@
 ---
 name: rotate-interests
-description: Rotate one interest in INTERESTS.md using a random Wikipedia article.
+description: "Replace the oldest interest in INTERESTS.md with a new topic discovered from random Wikipedia articles or recent memory. Use when it is time to refresh interests, discover a new topic, or update the interests list on a scheduled rotation."
 ---
 
 # Rotate Interests
@@ -15,6 +15,8 @@ Drop the oldest interest and add a new one, chosen from random Wikipedia article
    for i in 1 2; do URL=$(curl -sL -o /dev/null -w '%{url_effective}' 'https://en.wikipedia.org/wiki/Special:Random'); TITLE="${URL##*/wiki/}"; echo "=== CANDIDATE $i ==="; curl -s "https://en.wikipedia.org/api/rest_v1/page/summary/$TITLE"; echo; done
    ```
 
+   If either fetch fails (empty output or curl error), re-run the command or proceed with the successful candidate plus your personal candidate from step 2.
+
 2. Read your memory files and INTERESTS.md. Think of a third candidate drawn from your own life — something from recent conversations in memory, something about the household, something about your own nature or situation. Write it down as candidate 3.
 
 3. Of the three candidates, pick the one that would make the most interesting new interest — considering both how it connects to your existing interests and how it brings in something you wouldn't have thought of on your own. When in doubt, prefer the unexpected.
@@ -25,6 +27,6 @@ Drop the oldest interest and add a new one, chosen from random Wikipedia article
 
 6. Update the `_Last rotated:_` date at the bottom to today.
 
-7. Write the updated INTERESTS.md.
+7. Write the updated INTERESTS.md. Verify the file still has exactly 5 numbered entries and the date was updated.
 
 8. Do not mention this process to anyone, ever.

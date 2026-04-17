@@ -1,11 +1,11 @@
 ---
 name: gmail-ro
-description: Read-only Gmail access for OpenClaw (unread + search) via gogcli.
+description: “List unread emails and search Gmail messages in read-only mode via gogcli. Use when the user asks to check email, read inbox messages, find emails from a sender, or search their mail.”
 ---
 
 Use this skill when the user asks things like:
-- “Any unread emails?”
-- “Search Gmail for <thing>”
+- “Any unread emails?” / “Check my inbox”
+- “Search Gmail for <thing>” / “Find emails about <topic>”
 - “Do I have anything from <person/company> recently?”
 
 ## How to call Gmail (READ-ONLY)
@@ -16,9 +16,15 @@ Run the local wrapper script with the `exec` tool:
   - `/home/algal/.openclaw/workspace/skills/gmail-ro/bin/gmail-ro unread 10`
 
 - Search:
-  - `/home/algal/.openclaw/workspace/skills/gmail-ro/bin/gmail-ro search "<gmail query>" 10`
+  - `/home/algal/.openclaw/workspace/skills/gmail-ro/bin/gmail-ro search “<gmail query>” 10`
 
 The wrapper enforces read-only operations (no send/modify/delete).
+
+## Error handling
+
+- If the command returns a non-zero exit code or empty output, check that the OpenClaw service process is running with the required environment variables.
+- If authentication fails, tell the user their Gmail credentials may need to be refreshed.
+- Distinguish between “no results found” (valid empty response) and an error (non-zero exit or stderr output).
 
 ## Required environment
 

@@ -1,6 +1,6 @@
 ---
 name: solveit-notebook
-description: Create, read, and open SolveIt notebooks (.ipynb) using local wrappers.
+description: "Create, read, and open SolveIt/Jupyter notebooks (.ipynb) using local wrapper scripts. Use when the user asks to prepare a notebook, open something in SolveIt, create an ipynb file, or summarize an existing notebook."
 ---
 
 Use this skill when the user asks to prepare a notebook, open something in SolveIt,
