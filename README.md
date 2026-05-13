@@ -1,5 +1,14 @@
 # Sparky
 
+
+> [!NOTE]
+>
+> This repo contains the public, MIT-licensed code for [Sparky](https://alexisgallagher.com/posts/2026/hello-sparky/), as of mid-February 2026.
+>
+> Since then, Sparky and I won the [NVIDIA GTC Golden Ticket](https://x.com/alexisgallagher/status/2027129913736876201?s=20), Sparky had his own [booth on the GTC exhibition floor](https://alexisgallagher.com/posts/2026/sparky-gtc/), talking to the public for a week, and I have added many features, such as subagent delegation, a real-time perceptual system to detect faces, [organic voice enrollment](https://alexisgallagher.com/posts/2026/sparky-organicenrollment/), a dedicated addressing model, the ability to run fully offline or on weak hardware like a Raspberry Pi, and other things. Sparky even [briefly traveled to the 1930s](https://alexisgallagher.com/posts/2026/sparky-talkie/).
+>
+> This work is in a private repo, but if you'd like to try it, please [join the discord](https://alexisgallagher.com/posts/2026/hello-sparky/) and I would be delighted to share it!
+
 [![Intro video](https://img.youtube.com/vi/DQi3WcYyCK8/maxresdefault.jpg)](https://youtu.be/DQi3WcYyCK8?si=GeK_WCQvkyvC_PSP)
 
 Sparky is a living and useful agent, inhabiting a Reachy Mini Lite body,
