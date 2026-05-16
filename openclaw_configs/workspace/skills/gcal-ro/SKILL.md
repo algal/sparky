@@ -1,11 +1,11 @@
 ---
 name: gcal-ro
-description: Read-only Google Calendar access for OpenClaw via gogcli (today/tomorrow/next days/search).
+description: “View today’s and upcoming Google Calendar events, search calendar entries by keyword, and check schedule availability in read-only mode via gogcli. Use when the user asks about their schedule, meetings, appointments, events, or agenda.”
 ---
 
 Use this skill when the user asks:
-- “What’s on my calendar today/tomorrow?”
-- “What are my next meetings?”
+- “What’s on my calendar today/tomorrow?” / “What’s my schedule?”
+- “What are my next meetings?” / “Any appointments this week?”
 - “When is <thing>?” / “Do I have <thing> on my calendar?”
 
 ## READ-ONLY policy

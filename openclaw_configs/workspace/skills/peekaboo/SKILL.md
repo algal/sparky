@@ -1,12 +1,12 @@
 ---
 name: peekaboo
-description: Capture and automate macOS UI with Peekaboo on the "arrow" node.
+description: "Take screenshots, click UI elements, type text, and automate macOS desktop interactions remotely via the Peekaboo CLI on the 'arrow' node. Use when the user asks to look at their screen, capture a window, interact with a macOS app, automate GUI tasks, or inspect what is on their display."
 ---
 
 # Peekaboo (via arrow)
 
 Peekaboo runs on the macOS node **"arrow"** (Alexis's Mac). You are on Linux
-and cannot run it locally.
+and cannot run it locally. All commands run via `system.run` on node "arrow".
 
 ## Capturing the active window (most common use)
 
@@ -23,8 +23,10 @@ on," or "help me with this":
 Prefer `--mode frontmost` over `--mode screen` — it captures only the focused
 window, which is smaller and more relevant than the full widescreen display.
 
-All commands use only `system.run` on node "arrow" (provided by the native Mac
-app). No other node commands are needed.
+## Troubleshooting
+
+- If capture returns empty or errors, run `peekaboo permissions` on "arrow" to verify Screen Recording and Accessibility access are granted.
+- If the node "arrow" is unreachable, inform the user that the Mac node is offline.
 
 ## Full CLI reference
 
@@ -94,5 +96,4 @@ Open a URL:
 open "https://example.com"
 ```
 
-All commands run via `system.run` on node "arrow". To retrieve image results,
-append `&& base64 -i <path>` to the capture command.
+To retrieve image results, append `&& base64 -i <path>` to the capture command.
